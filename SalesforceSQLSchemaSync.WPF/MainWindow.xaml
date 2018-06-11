@@ -4,8 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SalesforceSQLSchemaSync.WPF"
+		xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="Salesforce SQL Schema Sync" Height="450" Width="800">
+        Title="Salesforce SQL Schema Sync" Height="450" Width="800"
+		DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
@@ -27,17 +29,24 @@
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
 				</Grid.RowDefinitions>
 				<Label Grid.Row="0" Grid.Column="0">URL:</Label>
-				<TextBox Grid.Row="0" Grid.Column="1" />
-				<Label Grid.Row="1" Grid.Column="0">Login:</Label>
-				<TextBox Grid.Row="1" Grid.Column="1" />
-				<Label Grid.Row="2" Grid.Column="0">Password+Token:</Label>
-				<TextBox Grid.Row="2" Grid.Column="1" />
-				<CheckBox Grid.Row="3" Grid.Column="1" Content="Remember connection information" />
+				<TextBox Grid.Row="0" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding Path=SalesforceUrl, Mode=TwoWay}" />
+				<Label Grid.Row="1" Grid.Column="0">Username:</Label>
+				<TextBox Grid.Row="1" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceUsername, Mode=TwoWay}" />
+				<Label Grid.Row="2" Grid.Column="0">Password:</Label>
+				<PasswordBox Grid.Row="2" Grid.Column="1" PasswordChanged="SalesforcePassword_PasswordChanged" Name="SalesforcePasswordBox" />
+				<Label Grid.Row="3" Grid.Column="0">Token:</Label>
+				<TextBox Grid.Row="3" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
+				<CheckBox Grid.Row="6" Grid.Column="1" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay, diag:PresentationTraceSources.TraceLevel=High}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
+				<Button Grid.Row="7" Grid.Column="1" Content="Connect to Salesforce" Width="150" HorizontalAlignment="Left" Click="SalesforceConnect_Click" />
 			</Grid>
 		</GroupBox>
-		<GroupBox Header="SQL Connection" Grid.Row="0" Grid.Column="1">
+		<GroupBox Header="SQL Connection" Grid.Row="0" Grid.Column="1" Visibility="Hidden">
 			<Grid>
 				<Grid.Resources>
 					<Style TargetType="Border" >
@@ -62,7 +71,23 @@
 				<CheckBox Grid.Row="3" Grid.Column="1" Content="Remember connection information" />
 			</Grid>
 		</GroupBox>
-		<TreeView Height="Auto" Width="Auto" Grid.Row="1" Grid.Column="0" />
+		<Grid Grid.Row="1" Grid.Column="0" Height="Auto" Width="Auto">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*" />
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*" />
+				<RowDefinition Height="20" />
+			</Grid.RowDefinitions>
+			<ListBox Grid.Row="0" Grid.Column="0" Height="Auto" Width="Auto" SelectionMode="Multiple" ItemsSource="{Binding SalesforceObjects}" Background="WhiteSmoke">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}"/>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+			<Button Grid.Row="1" Grid.Column="0" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Center"  Click="SalesforceConnect_Click"/>
+		</Grid>
 
 	</Grid>
 </Window>

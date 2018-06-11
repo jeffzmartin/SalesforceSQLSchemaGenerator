@@ -26,12 +26,12 @@ namespace SalesforceSQLSchemaSync.WPF.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SalesforceURL {
+        public string SalesforceUrl {
             get {
-                return ((string)(this["SalesforceURL"]));
+                return ((string)(this["SalesforceUrl"]));
             }
             set {
-                this["SalesforceURL"] = value;
+                this["SalesforceUrl"] = value;
             }
         }
         
@@ -50,12 +50,24 @@ namespace SalesforceSQLSchemaSync.WPF.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SalesforcePasswordToken {
+        public string SalesforcePassword {
             get {
-                return ((string)(this["SalesforcePasswordToken"]));
+                return ((string)(this["SalesforcePassword"]));
             }
             set {
-                this["SalesforcePasswordToken"] = value;
+                this["SalesforcePassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SalesforceToken {
+            get {
+                return ((string)(this["SalesforceToken"]));
+            }
+            set {
+                this["SalesforceToken"] = value;
             }
         }
     }

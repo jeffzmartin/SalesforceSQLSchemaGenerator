@@ -26,23 +26,38 @@ namespace SalesforceSQLSchemaSync.WPF {
 
 	internal class SettingsManager {
 		public static string GetValue(string propertyName) {
-			return (string)Properties.Settings.Default[propertyName];
-		}
-		public static void SetValue(string propertyName, string value) {
-			Properties.Settings.Default[propertyName] = value;
-			Properties.Settings.Default.Save();
-		}
-		public static string GetSecureValue(string propertyName) {
-			string value = (string)Properties.Settings.Default[propertyName];
-			if(!string.IsNullOrEmpty(value)) {
-				return Encryption.DecryptString(Encryption.ToSecureString(value));
+			if(Properties.Settings.Default[propertyName] != null) {
+				return (string)Properties.Settings.Default[propertyName];
 			}
 			else {
 				return null;
 			}
 		}
+		public static void SetValue(string propertyName, string value) {
+			if (!string.IsNullOrWhiteSpace(value)) {
+				Properties.Settings.Default[propertyName] = value;
+			}
+			else {
+				Properties.Settings.Default[propertyName] = null;
+			}
+			Properties.Settings.Default.Save();
+		}
+		public static string GetSecureValue(string propertyName) {
+			if(Properties.Settings.Default[propertyName] != null) {
+				string value = (string)Properties.Settings.Default[propertyName];
+				if (!string.IsNullOrEmpty(value)) {
+					return Encryption.ToInsecureString(Encryption.DecryptString(value));
+				}
+			}
+			return null;
+		}
 		public static void SetSecureValue(string propertyName, string value) {
-			Properties.Settings.Default[propertyName] = Encryption.EncryptString(Encryption.ToSecureString(value));
+			if(!string.IsNullOrWhiteSpace(value)) {
+				Properties.Settings.Default[propertyName] = Encryption.EncryptString(Encryption.ToSecureString(value));
+			}
+			else {
+				Properties.Settings.Default[propertyName] = null;
+			}
 			Properties.Settings.Default.Save();
 		}
 	}
