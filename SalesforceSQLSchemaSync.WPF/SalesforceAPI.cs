@@ -1,39 +1,180 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using SalesforceMagic;
-using SalesforceMagic.Configuration;
-
-using SFDC;
-using SFDC.metadataApi;
+using System.Xml;
+using SFDC.Models;
 using SFDC.soapApi;
+using SFDC;
 
 namespace SalesforceSQLSchemaSync.WPF {
-	public class SalesforceAPI {
-		private SalesforceClient salesforceClient = null;
-		private SalesForceApi salesForceApi = null;
-		private LoginResult loginResult = null;
+	public class SalesforceApi : IDisposable {
+		private readonly SforceService salesforceSoapService;
+		private readonly LoginResult loginResult;
+		private readonly string url;
 
-		private string url = null;
-
-		public SalesforceAPI(string url, string username, string password, string token) {
+		public SalesforceApi(string url, string username, string password, string token) {
 			this.url = url;
-			salesForceApi = new SalesForceApi();
-			loginResult = salesForceApi.Login(username, password + token);
 
-			//salesforceClient = new SalesforceClient(new SalesforceConfig() {
-			//	InstanceUrl = url,
-			//	Username = username,
-			//	Password = password,
-			//	SecurityToken = token,
-			//	LogoutOnDisposal = true,
-			//}, true);
+			salesforceSoapService = new SforceService();
+			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+			loginResult = Login(username, password + token);
+
+			Init(url, loginResult.sessionId);
 		}
 
 		public List<string> GetObjectNames() {
-			return (new SalesForceApi(string.Format("{0}/services/Soap/u/18.0",url), loginResult.sessionId)).GatTableNameList();
+			return GetTableNameList();
 		}
+
+		#region SFDC.SalesforceApi from https://github.com/marcincymbalista/SFDC/
+		private void Init(string endPointUrl, string sessionId) {
+			salesforceSoapService.Url = string.Format("{0}/services/Soap/u/18.0", endPointUrl);
+			salesforceSoapService.SessionHeaderValue = new SessionHeader { sessionId = sessionId };
+		}
+
+		public GetUserInfoResult GetUserInfo() {
+			return salesforceSoapService.getUserInfo();
+		}
+
+		private LoginResult Login(string userName, string password) {
+			return salesforceSoapService.login(userName, password);
+		}
+
+		///<summary>
+		///Create any sObject such as Opportunity, Account, CustomObject__c
+		///</summary>
+		///<param name="model">
+		///model.Type = "Account"
+		///model.Fields = new List(ElementField)(){ ElementField ={Key ="Name", Value = "My new Account Name"} etc.}
+		///</param>
+		///<returns></returns>
+		public SaveResult[] CreateElement(CreateSObject model) {
+			if (model?.Fields == null) {
+				return new SaveResult[]
+				{
+					new SaveResult()
+					{
+						success = false,
+						errors =  new Error[]
+						{
+							new Error()
+							{
+							   message = "UpdateSObject or UpdateSObject.Fields cannot be null"
+							}
+						}
+					}
+				};
+			}
+
+			sObject element = new sObject();
+			XmlDocument doc = new XmlDocument();
+			XmlElement[] fields = new XmlElement[model.Fields.Count];
+
+			for (int i = 0; i < model.Fields.Count; ++i) {
+				fields[i] = doc.CreateElement(model.Fields[i].Key);
+				fields[i].InnerText = model.Fields[i].Value;
+			}
+
+			element.type = model.Type;
+			element.Any = fields;
+
+			return salesforceSoapService
+				.create(new sObject[] { element });
+		}
+		///<summary>
+		///Update any sObject such as Opportunity, Account, CustomObject__c
+		///</summary>
+		///<param name="model">
+		///model.Id = "SalesForceId"
+		///model.Type = "Account"
+		///model.Fields = new List(ElementField)(){ ElementField ={Key ="Name", Value = "My new Account Name"} etc.  }
+		///</param>
+		///<returns></returns>
+		public SaveResult[] UpdateElement(UpdateSObject model) {
+			if (model?.Fields == null) {
+				return new SaveResult[]
+				{
+					new SaveResult()
+					{
+						success = false,
+						errors =  new Error[]
+						{
+							new Error()
+							{
+								message = "UpdateSObject or UpdateSObject.Fields cannot be null "
+							}
+						}
+					}
+				};
+			}
+
+			sObject element = new sObject();
+			XmlDocument doc = new XmlDocument();
+			XmlElement[] fields = new XmlElement[model.Fields.Count];
+
+			for (int i = 0; i < model.Fields.Count; ++i) {
+				fields[i] = doc.CreateElement(model.Fields[i].Key);
+				fields[i].InnerText = model.Fields[i].Value;
+			}
+
+			element.type = model.Type;
+			element.Id = model.Id;
+			element.Any = fields;
+
+			return salesforceSoapService
+				.update(new sObject[] { element });
+		}
+
+		public List<string> GetTableNameList() {
+			List<string> sobjectsNames = new List<string>();
+			DescribeGlobalResult dgr = salesforceSoapService.describeGlobal();
+
+			foreach (var obj in dgr.sobjects) {
+				sobjectsNames.Add(obj.name);
+			}
+
+			return sobjectsNames;
+		}
+
+		public DescribeSObjectResult[] GetSObjectDetails(string[] tableNames) {
+			return salesforceSoapService.describeSObjects(tableNames);
+		}
+		#endregion
+
+		#region IDisposable Support
+		private bool disposedValue = false; // To detect redundant calls
+
+		protected virtual void Dispose(bool disposing) {
+			if (!disposedValue) {
+				if (disposing) {
+					// TODO: dispose managed state (managed objects).
+					salesforceSoapService.logout();
+				}
+
+				// TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+				// TODO: set large fields to null.
+
+				disposedValue = true;
+			}
+		}
+
+		// TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+		// ~SalesforceApi() {
+		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+		//   Dispose(false);
+		// }
+
+		// This code added to correctly implement the disposable pattern.
+		public void Dispose() {
+			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+			Dispose(true);
+			// TODO: uncomment the following line if the finalizer is overridden above.
+			// GC.SuppressFinalize(this);
+		}
+		#endregion
 	}
 }

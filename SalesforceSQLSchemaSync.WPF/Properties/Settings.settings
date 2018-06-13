@@ -14,5 +14,20 @@
     <Setting Name="SalesforceToken" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="SqlSchemaName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">dbo</Value>
+    </Setting>
+    <Setting Name="SqlTextUnicode" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SqlVarcharMaxMinimumThreshold" GenerateDefaultValueInCode="false" Type="System.String" Scope="User">
+      <Value Profile="(Default)">4000</Value>
+    </Setting>
+    <Setting Name="SalesforceRememberConnection" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SqlSaveDirectory" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

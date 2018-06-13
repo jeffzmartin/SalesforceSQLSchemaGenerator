@@ -52,21 +52,13 @@
     <StartupObject>SalesforceSQLSchemaSync.WPF.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FastMember, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FastMember.1.3.0\lib\net45\FastMember.dll</HintPath>
-    </Reference>
-    <Reference Include="LINQtoCSV, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\LINQtoCSV.1.5.0.0\lib\net35\LINQtoCSV.dll</HintPath>
-    </Reference>
-    <Reference Include="SalesforceMagic, Version=0.2.4.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SalesforceMagic.0.2.3.8\lib\net45\SalesforceMagic.dll</HintPath>
-    </Reference>
-    <Reference Include="SFDC, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SFDC.SalesforceApi.1.0.0.3\lib\net452\SFDC.dll</HintPath>
+    <Reference Include="ICSharpCode.AvalonEdit, Version=5.0.3.0, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
+      <HintPath>..\packages\AvalonEdit.5.0.4\lib\Net40\ICSharpCode.AvalonEdit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Security" />
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -85,10 +77,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CheckedListItem.cs" />
     <Compile Include="Encryption.cs" />
     <Compile Include="SalesforceAPI.cs" />
     <Compile Include="SalesforceSQLSchemaSync.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Properties\Settings.cs" />
+    <Compile Include="SettingsManager.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -140,6 +134,15 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AvalonEdit.SQLSyntax.xhsd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SFDC\SFDC.csproj">
+      <Project>{2ed4ac84-565e-495c-8597-1ad87946f014}</Project>
+      <Name>SFDC</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -70,5 +70,64 @@ namespace SalesforceSQLSchemaSync.WPF.Properties {
                 this["SalesforceToken"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("dbo")]
+        public string SqlSchemaName {
+            get {
+                return ((string)(this["SqlSchemaName"]));
+            }
+            set {
+                this["SqlSchemaName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SqlTextUnicode {
+            get {
+                return ((bool)(this["SqlTextUnicode"]));
+            }
+            set {
+                this["SqlTextUnicode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public string SqlVarcharMaxMinimumThreshold {
+            get {
+                return ((string)(this["SqlVarcharMaxMinimumThreshold"]));
+            }
+            set {
+                this["SqlVarcharMaxMinimumThreshold"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SalesforceRememberConnection {
+            get {
+                return ((bool)(this["SalesforceRememberConnection"]));
+            }
+            set {
+                this["SalesforceRememberConnection"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SqlSaveDirectory {
+            get {
+                return ((string)(this["SqlSaveDirectory"]));
+            }
+            set {
+                this["SqlSaveDirectory"] = value;
+            }
+        }
     }
 }

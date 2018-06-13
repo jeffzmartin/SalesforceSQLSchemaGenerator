@@ -6,12 +6,12 @@
         xmlns:local="clr-namespace:SalesforceSQLSchemaSync.WPF"
 		xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="Salesforce SQL Schema Sync" Height="450" Width="800"
+		xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        Title="Salesforce SQL Schema Sync" Height="727.793" Width="899.93"
 		DataContext="{Binding RelativeSource={RelativeSource Self}}">
-    <Grid>
+	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*" />
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
@@ -42,11 +42,11 @@
 				<PasswordBox Grid.Row="2" Grid.Column="1" PasswordChanged="SalesforcePassword_PasswordChanged" Name="SalesforcePasswordBox" />
 				<Label Grid.Row="3" Grid.Column="0">Token:</Label>
 				<TextBox Grid.Row="3" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
-				<CheckBox Grid.Row="6" Grid.Column="1" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay, diag:PresentationTraceSources.TraceLevel=High}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
+				<CheckBox Grid.Row="6" Grid.Column="1" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
 				<Button Grid.Row="7" Grid.Column="1" Content="Connect to Salesforce" Width="150" HorizontalAlignment="Left" Click="SalesforceConnect_Click" />
 			</Grid>
 		</GroupBox>
-		<GroupBox Header="SQL Connection" Grid.Row="0" Grid.Column="1" Visibility="Hidden">
+		<GroupBox Header="SQL Parameters" Grid.Row="0" Grid.Column="1">
 			<Grid>
 				<Grid.Resources>
 					<Style TargetType="Border" >
@@ -62,13 +62,35 @@
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
 				</Grid.RowDefinitions>
-				<Label Grid.Row="0" Grid.Column="0">Connection String:</Label>
-				<TextBox Grid.Row="0" Grid.Column="1" />
-				<Label Grid.Row="1" Grid.Column="0">Schema:</Label>
-				<TextBox Grid.Row="1" Grid.Column="1" />
-				<CheckBox Grid.Row="2" Grid.Column="1" Content="Define text data as UNICODE (use NVARCHAR)" />
-				<CheckBox Grid.Row="3" Grid.Column="1" Content="Remember connection information" />
+				<Label Grid.Row="1" Grid.Column="0">
+					<Label.Content>Schema:</Label.Content>
+					<Label.ToolTip>
+						<TextBlock>Leave blank for no schema to be specified in generated sql.</TextBlock>
+					</Label.ToolTip>
+				</Label>
+				<TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SqlSchemaName}" TextChanged="SaveSqlInfo" />
+				<Label Grid.Row="2" Grid.Column="0">
+					<Label.Content>N/Varchar(MAX) Minimum:</Label.Content>
+					<Label.ToolTip>
+						<TextBlock>Defines the minimum length for a Varchar/NVarchar field to be defined as VARCHAR(MAX)/NVARCHAR(MAX). Blank threshold disables the (MAX) length value.</TextBlock>
+					</Label.ToolTip>
+				</Label>
+				<TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SqlVarcharMaxMinimumThreshold}" TextChanged="SaveSqlInfo" />
+				<CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding SqlTextUnicode}" Content="Define text data as UNICODE (use NVARCHAR)" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
+				<Button Grid.Row="4" Grid.Column="1" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
+				<Label Grid.Row="5" Grid.Column="1"></Label>
+				<Grid Grid.Row="6" Grid.Column="1">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="Auto"/>
+					</Grid.ColumnDefinitions>
+					<Button Grid.Row="0" Grid.Column="0" Content="Save as Separate Files..." Width="130" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
+					<Button Grid.Row="0" Grid.Column="1" Content="Save as Single File..." Width="130" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
+				</Grid>
 			</Grid>
 		</GroupBox>
 		<Grid Grid.Row="1" Grid.Column="0" Height="Auto" Width="Auto">
@@ -77,7 +99,6 @@
 			</Grid.ColumnDefinitions>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="*" />
-				<RowDefinition Height="20" />
 			</Grid.RowDefinitions>
 			<ListBox Grid.Row="0" Grid.Column="0" Height="Auto" Width="Auto" SelectionMode="Multiple" ItemsSource="{Binding SalesforceObjects}" Background="WhiteSmoke">
 				<ListBox.ItemTemplate>
@@ -86,8 +107,7 @@
 					</DataTemplate>
 				</ListBox.ItemTemplate>
 			</ListBox>
-			<Button Grid.Row="1" Grid.Column="0" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Center"  Click="SalesforceConnect_Click"/>
 		</Grid>
-
+		<avalonEdit:TextEditor Grid.Row="1" Grid.Column="1" Grid.RowSpan="2" FontFamily="Consolas" SyntaxHighlighting="SQL" ShowLineNumbers="True" Document="{Binding SqlOutputDocument}" IsReadOnly="True" />
 	</Grid>
 </Window>
