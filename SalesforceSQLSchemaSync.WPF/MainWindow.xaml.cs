@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,7 +26,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window {
+	public partial class MainWindow : Window, INotifyPropertyChanged {
 		//private bool IsInitialized = false;
 
 		public string SalesforceUrl { get; set; }
@@ -42,14 +43,37 @@ namespace SalesforceSQLSchemaSync.WPF {
 		public ObservableCollection<CheckedListItem> SalesforceObjects { get; set; }
 
 		public TextDocument SqlOutputDocument { get; set; }
-		public bool HasSqlOutput { get; set; }
+		private Visibility generateScriptVisibility = Visibility.Hidden;
+		public Visibility GenerateScriptVisibility {
+			get {
+				return generateScriptVisibility;
+			}
+			set {
+				generateScriptVisibility = value;
+				OnPropertyChanged("GenerateScriptVisibility");
+			}
+		}
+		private Visibility saveScriptVisibility = Visibility.Hidden;
+		public Visibility SaveScriptVisibility {
+			get {
+				return saveScriptVisibility;
+			}
+			set {
+				saveScriptVisibility = value;
+				OnPropertyChanged("SaveScriptVisibility");
+			}
+		}
+
+		public Thickness DefaultMargin { get; set; }
 		private Dictionary<string, string> GeneratedSqlScript = new Dictionary<string, string>();
 
 		private SalesforceApi salesforceAPI = null;
 
 		public MainWindow() {
 			//set defaults
-			HasSqlOutput = false;
+			SaveScriptVisibility = Visibility.Hidden;
+			GenerateScriptVisibility = Visibility.Hidden;
+			DefaultMargin = new Thickness(2, 2, 2, 2);
 
 			//retrieve values from settings
 			SalesforceRememberConnection = SettingsManager.GetValue<bool>("SalesforceRememberConnection");
@@ -76,9 +100,15 @@ namespace SalesforceSQLSchemaSync.WPF {
 			if(!string.IsNullOrWhiteSpace(SalesforcePassword)) {
 				SalesforcePasswordBox.Password = SalesforcePassword;
 			}
-
-			//IsInitialized = true;
 		}
+
+		#region INotifyPropertyChanged implementation
+		// Basically, the UI thread subscribes to this event and update the binding if the received Property Name correspond to the Binding Path element
+		public event PropertyChangedEventHandler PropertyChanged;
+		protected virtual void OnPropertyChanged(string propertyName) {
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+		#endregion
 
 		private void LoadSqlSyntaxHighlightRules() {
 			Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SalesforceSQLSchemaSync.WPF.AvalonEdit.SQLSyntax.xhsd");
@@ -131,6 +161,20 @@ namespace SalesforceSQLSchemaSync.WPF {
 			catch {
 				throw;
 			}
+			if (SalesforceObjects.Count > 0) {
+				GenerateScriptVisibility = Visibility.Visible;
+			}
+		}
+
+		public void SelectAllObjects_Click(object sender, RoutedEventArgs e) {
+			foreach(CheckedListItem i in SalesforceObjects) {
+				i.IsChecked = true;
+			}
+		}
+		public void UnselectAllObjects_Click(object sender, RoutedEventArgs e) {
+			foreach (CheckedListItem i in SalesforceObjects) {
+				i.IsChecked = false;
+			}
 		}
 
 		private void SaveSqlInfo(object sender, RoutedEventArgs e) {
@@ -170,7 +214,6 @@ namespace SalesforceSQLSchemaSync.WPF {
 		private void SaveAsMultipleFiles(object sender, RoutedEventArgs e) {
 		}
 
-
 		#region GenerateSqlScript(); GenerateSqlScript_Click();
 		public Dictionary<string,string> GenerateSqlScript() {
 			Dictionary<string, string> output = new Dictionary<string, string>();
@@ -183,7 +226,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 			}
 
 			bool isFirst = true;
-			DescribeSObjectResult[] sObjects = salesforceAPI.GetSObjectDetails(tableNames.ToArray());
+			List<DescribeSObjectResult> sObjects = salesforceAPI.GetSObjectDetails(tableNames);
 			string schema = null;
 			if (!string.IsNullOrWhiteSpace(SqlSchemaName)) {
 				schema = string.Format("[{0}].", SqlSchemaName);
@@ -212,6 +255,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 					switch (f.type.ToString()) {
 						case "currency":
 						case "decimal":
+						case "double":
 						case "percent":
 							sb.Append(string.Format("[{0}] DECIMAL({1},{2})", f.name, f.precision, f.scale));
 							break;
@@ -247,7 +291,6 @@ namespace SalesforceSQLSchemaSync.WPF {
 						case "long":
 							sb.Append(string.Format("[{0}] BIGINT", f.name));
 							break;
-						case "double":
 						case "date":
 						case "datetime":
 						case "int":
@@ -262,12 +305,12 @@ namespace SalesforceSQLSchemaSync.WPF {
 						sb.Append(" NOT NULL");
 					}
 					sb.AppendLine();
-					if(f.idLookup) {
+					if(string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
 						primaryKeys.Add(f.name);
 					}
 				}
 				if(primaryKeys.Count > 0) {
-					sb.AppendLine(string.Format("	,PRIMARY KEY ({0})", string.Join(",", primaryKeys)));
+					sb.AppendLine(string.Format("	,PRIMARY KEY ([{0}])", string.Join("], [", primaryKeys)));
 				}
 				sb.Append(");");
 
@@ -285,6 +328,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 				sb.AppendLine(sql);
 			}
 			SqlOutputDocument.Text = sb.ToString();
+			SaveScriptVisibility = Visibility.Visible;
 		}
 		#endregion
 	}

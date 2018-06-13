@@ -34,16 +34,26 @@
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
 				</Grid.RowDefinitions>
-				<Label Grid.Row="0" Grid.Column="0">URL:</Label>
-				<TextBox Grid.Row="0" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding Path=SalesforceUrl, Mode=TwoWay}" />
-				<Label Grid.Row="1" Grid.Column="0">Username:</Label>
-				<TextBox Grid.Row="1" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceUsername, Mode=TwoWay}" />
-				<Label Grid.Row="2" Grid.Column="0">Password:</Label>
-				<PasswordBox Grid.Row="2" Grid.Column="1" PasswordChanged="SalesforcePassword_PasswordChanged" Name="SalesforcePasswordBox" />
-				<Label Grid.Row="3" Grid.Column="0">Token:</Label>
-				<TextBox Grid.Row="3" Grid.Column="1" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
-				<CheckBox Grid.Row="6" Grid.Column="1" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
-				<Button Grid.Row="7" Grid.Column="1" Content="Connect to Salesforce" Width="150" HorizontalAlignment="Left" Click="SalesforceConnect_Click" />
+				<Label Grid.Row="0" Grid.Column="0" Margin="{Binding DefaultMargin}">URL:</Label>
+				<TextBox Grid.Row="0" Grid.Column="1" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding Path=SalesforceUrl, Mode=TwoWay}" />
+				<Label Grid.Row="1" Grid.Column="0" Margin="{Binding DefaultMargin}">Username:</Label>
+				<TextBox Grid.Row="1" Grid.Column="1" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceUsername, Mode=TwoWay}" />
+				<Label Grid.Row="2" Grid.Column="0" Margin="{Binding DefaultMargin}">Password:</Label>
+				<PasswordBox Grid.Row="2" Grid.Column="1" Margin="{Binding DefaultMargin}" PasswordChanged="SalesforcePassword_PasswordChanged" Name="SalesforcePasswordBox" />
+				<Label Grid.Row="3" Grid.Column="0" Margin="{Binding DefaultMargin}">Token:</Label>
+				<TextBox Grid.Row="3" Grid.Column="1" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
+				<CheckBox Grid.Row="6" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
+				<Grid Grid.Row="7" Grid.Column="1">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
+					<Button Grid.Row="0" Grid.Column="0" Margin="{Binding DefaultMargin}" Content="Connect to Salesforce" Width="150" HorizontalAlignment="Left" Click="SalesforceConnect_Click" Grid.ColumnSpan="3" />
+					<Button Grid.Row="0" Grid.Column="2" Margin="{Binding DefaultMargin}" Content="Select All" Width="80" HorizontalAlignment="Right" Click="SelectAllObjects_Click" Visibility="{Binding GenerateScriptVisibility}"/>
+					<Button Grid.Row="0" Grid.Column="3" Margin="{Binding DefaultMargin}" Content="Select None" Width="80" HorizontalAlignment="Left" Click="UnselectAllObjects_Click" Visibility="{Binding GenerateScriptVisibility}"/>
+				</Grid>
 			</Grid>
 		</GroupBox>
 		<GroupBox Header="SQL Parameters" Grid.Row="0" Grid.Column="1">
@@ -66,30 +76,29 @@
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
 				</Grid.RowDefinitions>
-				<Label Grid.Row="1" Grid.Column="0">
+				<Label Grid.Row="1" Grid.Column="0" Margin="{Binding DefaultMargin}">
 					<Label.Content>Schema:</Label.Content>
 					<Label.ToolTip>
 						<TextBlock>Leave blank for no schema to be specified in generated sql.</TextBlock>
 					</Label.ToolTip>
 				</Label>
-				<TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SqlSchemaName}" TextChanged="SaveSqlInfo" />
-				<Label Grid.Row="2" Grid.Column="0">
+				<TextBox Grid.Row="1" Grid.Column="1" Margin="{Binding DefaultMargin}" Text="{Binding SqlSchemaName}" TextChanged="SaveSqlInfo" />
+				<Label Grid.Row="2" Grid.Column="0" Margin="{Binding DefaultMargin}">
 					<Label.Content>N/Varchar(MAX) Minimum:</Label.Content>
 					<Label.ToolTip>
 						<TextBlock>Defines the minimum length for a Varchar/NVarchar field to be defined as VARCHAR(MAX)/NVARCHAR(MAX). Blank threshold disables the (MAX) length value.</TextBlock>
 					</Label.ToolTip>
 				</Label>
-				<TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SqlVarcharMaxMinimumThreshold}" TextChanged="SaveSqlInfo" />
-				<CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding SqlTextUnicode}" Content="Define text data as UNICODE (use NVARCHAR)" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
-				<Button Grid.Row="4" Grid.Column="1" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
-				<Label Grid.Row="5" Grid.Column="1"></Label>
-				<Grid Grid.Row="6" Grid.Column="1">
+				<TextBox Grid.Row="2" Grid.Column="1" Margin="{Binding DefaultMargin}" Text="{Binding SqlVarcharMaxMinimumThreshold}" TextChanged="SaveSqlInfo" />
+				<CheckBox Grid.Row="3" Grid.Column="1" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlTextUnicode}" Content="Define text data as UNICODE (use NVARCHAR)" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
+				<Button Grid.Row="4" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Left" Click="GenerateSqlScript_Click" Visibility="{Binding GenerateScriptVisibility}"/>
+				<Grid Grid.Row="6" Grid.Column="1" Visibility="{Binding SaveScriptVisibility}" Margin="0,19,0,0">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*"/>
-						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
 					</Grid.ColumnDefinitions>
-					<Button Grid.Row="0" Grid.Column="0" Content="Save as Separate Files..." Width="130" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
-					<Button Grid.Row="0" Grid.Column="1" Content="Save as Single File..." Width="130" HorizontalAlignment="Left" Click="GenerateSqlScript_Click"/>
+					<Button Grid.Row="0" Grid.Column="0" Margin="{Binding DefaultMargin}" Content="Save as Separate Files..." Width="130" HorizontalAlignment="Left" Click="SaveAsMultipleFiles"/>
+					<Button Grid.Row="0" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Save as Single File..." Width="130" HorizontalAlignment="Left" Click="SaveAsSingleFile"/>
 				</Grid>
 			</Grid>
 		</GroupBox>

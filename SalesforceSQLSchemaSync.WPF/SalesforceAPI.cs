@@ -140,10 +140,23 @@ namespace SalesforceSQLSchemaSync.WPF {
 			return sobjectsNames;
 		}
 
-		public DescribeSObjectResult[] GetSObjectDetails(string[] tableNames) {
-			return salesforceSoapService.describeSObjects(tableNames);
+		public List<DescribeSObjectResult> GetSObjectDetails(List<string> tableNames) {
+			List<DescribeSObjectResult> results = new List<DescribeSObjectResult>();
+			foreach(List<string> tableSet in splitList(tableNames, 100)) {
+				results.AddRange(salesforceSoapService.describeSObjects(tableSet.ToArray()));
+			}
+			return results;
 		}
 		#endregion
+
+		/*
+		 * From: https://stackoverflow.com/questions/11463734/split-a-list-into-smaller-lists-of-n-size
+		 */
+		public static IEnumerable<List<T>> splitList<T>(List<T> locations, int nSize = 30) {
+			for (int i = 0; i < locations.Count; i += nSize) {
+				yield return locations.GetRange(i, Math.Min(nSize, locations.Count - i));
+			}
+		}
 
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
