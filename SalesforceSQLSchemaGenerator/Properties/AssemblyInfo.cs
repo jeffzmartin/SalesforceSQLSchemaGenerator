@@ -8,9 +8,9 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("SalesforceSQLSchemaGenerator")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("https://github.com/jeffzmartin/SalesforceSQLSchemaGenerator")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Jeff Martin")]
+[assembly: AssemblyCompany("Jeff Z Martin")]
 [assembly: AssemblyProduct("SalesforceSQLSchemaGenerator")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2018")]
 [assembly: AssemblyTrademark("")]
