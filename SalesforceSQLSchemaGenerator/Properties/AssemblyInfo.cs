@@ -7,11 +7,11 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SalesforceSQLSchemaSync")]
+[assembly: AssemblyTitle("SalesforceSQLSchemaGenerator")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Hannon Armstrong")]
-[assembly: AssemblyProduct("SalesforceSQLSchemaSync")]
+[assembly: AssemblyCompany("Jeff Martin")]
+[assembly: AssemblyProduct("SalesforceSQLSchemaGenerator")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -9,13 +10,18 @@ using SFDC.Models;
 using SFDC.soapApi;
 using SFDC;
 
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	public class SalesforceApi : IDisposable {
 		private readonly SforceService salesforceSoapService;
 		private readonly LoginResult loginResult;
 		private readonly string url;
+		private readonly string soapUrlVersion = "18.0";
 
 		public SalesforceApi(string url, string username, string password, string token) {
+			if(url.EndsWith("/")) {
+				//trim trailing slash
+				url = url.Substring(0, url.Length - 1);
+			}
 			this.url = url;
 
 			salesforceSoapService = new SforceService();
@@ -30,9 +36,9 @@ namespace SalesforceSQLSchemaSync.WPF {
 			return GetTableNameList();
 		}
 
-		#region SFDC.SalesforceApi from https://github.com/marcincymbalista/SFDC/
+		#region Taken from SFDC.SalesforceApi https://github.com/marcincymbalista/SFDC/
 		private void Init(string endPointUrl, string sessionId) {
-			salesforceSoapService.Url = string.Format("{0}/services/Soap/u/18.0", endPointUrl);
+			salesforceSoapService.Url = string.Format("{0}/services/Soap/u/{1}", endPointUrl, soapUrlVersion);
 			salesforceSoapService.SessionHeaderValue = new SessionHeader { sessionId = sessionId };
 		}
 
@@ -141,18 +147,20 @@ namespace SalesforceSQLSchemaSync.WPF {
 		}
 
 		public List<DescribeSObjectResult> GetSObjectDetails(List<string> tableNames) {
-			List<DescribeSObjectResult> results = new List<DescribeSObjectResult>();
-			foreach(List<string> tableSet in splitList(tableNames, 100)) {
-				results.AddRange(salesforceSoapService.describeSObjects(tableSet.ToArray()));
-			}
-			return results;
+			ConcurrentBag<DescribeSObjectResult> results = new ConcurrentBag<DescribeSObjectResult>();
+			Parallel.ForEach(splitList(tableNames, 100), (tableSet) => {
+				foreach (DescribeSObjectResult o in salesforceSoapService.describeSObjects(tableSet.ToArray())) {
+					results.Add(o);
+				}
+			});
+			return results.ToList();
 		}
 		#endregion
 
 		/*
 		 * From: https://stackoverflow.com/questions/11463734/split-a-list-into-smaller-lists-of-n-size
 		 */
-		public static IEnumerable<List<T>> splitList<T>(List<T> locations, int nSize = 30) {
+		private IEnumerable<List<T>> splitList<T>(List<T> locations, int nSize = 30) {
 			for (int i = 0; i < locations.Count; i += nSize) {
 				yield return locations.GetRange(i, Math.Min(nSize, locations.Count - i));
 			}

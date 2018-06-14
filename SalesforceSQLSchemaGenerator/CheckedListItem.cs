@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	public class CheckedListItem : INotifyPropertyChanged {
 		public CheckedListItem(string value, string label) {
 			Value = value;

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
  * Uses code from https://weblogs.asp.net/jongalloway/encrypting-passwords-in-a-net-app-config-file
  * and https://stackoverflow.com/questions/2333149/how-to-fast-get-hardware-id-in-c
  */
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	class Encryption {
 		public static string GetMachineGuid() {
 			string location = @"SOFTWARE\Microsoft\Cryptography";

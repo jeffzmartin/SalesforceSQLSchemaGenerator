@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	internal class SettingsManager {
 		public static string GetString(string propertyName) {
 			if (Properties.Settings.Default[propertyName] != null && !string.IsNullOrWhiteSpace((string)Properties.Settings.Default[propertyName])) {

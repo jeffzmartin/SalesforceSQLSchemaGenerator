@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+//using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -22,12 +23,22 @@ using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using SFDC.soapApi;
 
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow : Window, INotifyPropertyChanged {
-		//private bool IsInitialized = false;
+
+		private string statusText = null;
+		public string StatusText { 
+			get {
+				return statusText;
+			}
+			set {
+				statusText = value;
+				OnPropertyChanged("StatusText");
+			}
+		}
 
 		public string SalesforceUrl { get; set; }
 		public string SalesforceUsername { get; set; }
@@ -71,6 +82,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 
 		public MainWindow() {
 			//set defaults
+			StatusText = "Initializing...";
 			SaveScriptVisibility = Visibility.Hidden;
 			GenerateScriptVisibility = Visibility.Hidden;
 			DefaultMargin = new Thickness(2, 2, 2, 2);
@@ -100,6 +112,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 			if(!string.IsNullOrWhiteSpace(SalesforcePassword)) {
 				SalesforcePasswordBox.Password = SalesforcePassword;
 			}
+			StatusText = "Ready";
 		}
 
 		#region INotifyPropertyChanged implementation
@@ -111,7 +124,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 		#endregion
 
 		private void LoadSqlSyntaxHighlightRules() {
-			Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SalesforceSQLSchemaSync.WPF.AvalonEdit.SQLSyntax.xhsd");
+			Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SalesforceSQLSchemaGenerator.AvalonEdit.SQLSyntax.xhsd");
 			XmlTextReader reader = new XmlTextReader(stream);
 			IHighlightingDefinition highlightingDefinition = HighlightingLoader.Load(reader, HighlightingManager.Instance);
 			HighlightingManager.Instance.RegisterHighlighting(highlightingDefinition.Name, new string[] { "*.sql", "*.txt" }, highlightingDefinition);
@@ -151,18 +164,21 @@ namespace SalesforceSQLSchemaSync.WPF {
 			SaveSalesforceConnctionInfo();
 
 			try {
+				StatusText = string.Format("Connecting to {0}...", SalesforceUrl);
 				salesforceAPI = new SalesforceApi(SalesforceUrl, SalesforceUsername, SalesforcePassword, SalesforceToken);
+				StatusText = string.Format("Retrieving object listing...", SalesforceUrl);
 				List<string> sfObjects = salesforceAPI.GetObjectNames();
 				SalesforceObjects.Clear();
 				foreach (string sObjectName in sfObjects) {
 					SalesforceObjects.Add(new CheckedListItem(sObjectName));
 				}
+				if (SalesforceObjects.Count > 0) {
+					GenerateScriptVisibility = Visibility.Visible;
+				}
+				StatusText = string.Format("Discovered {0} objects", SalesforceObjects.Count);
 			}
-			catch {
-				throw;
-			}
-			if (SalesforceObjects.Count > 0) {
-				GenerateScriptVisibility = Visibility.Visible;
+			catch (Exception ex) {
+				MessageBox.Show(ex.Message);
 			}
 		}
 
@@ -189,9 +205,10 @@ namespace SalesforceSQLSchemaSync.WPF {
 		}
 
 		private void SaveAsSingleFile(object sender, RoutedEventArgs e) {
-			Microsoft.Win32.SaveFileDialog dialog = new Microsoft.Win32.SaveFileDialog();
-			dialog.OverwritePrompt = true;
-			if (SqlSaveDirectory != null) {
+			System.Windows.Forms.SaveFileDialog dialog = new System.Windows.Forms.SaveFileDialog {
+				OverwritePrompt = true
+			};
+			if (!string.IsNullOrWhiteSpace(SqlSaveDirectory)) {
 				dialog.InitialDirectory = SqlSaveDirectory;
 			}
 			else {
@@ -199,7 +216,8 @@ namespace SalesforceSQLSchemaSync.WPF {
 			}
 			dialog.DefaultExt = ".sql";
 			dialog.Filter = "SQL Script (*.sql)|*.sql|All Files (*.*)|*.*";
-			if(dialog.ShowDialog() == true) {
+			if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+				StatusText = string.Format("Saving {0}...", dialog.FileName);
 				StreamWriter sw = new StreamWriter(dialog.OpenFile());
 				foreach(string sql in GeneratedSqlScript.Values) {
 					sw.Write(sql);
@@ -208,10 +226,38 @@ namespace SalesforceSQLSchemaSync.WPF {
 				sw.Dispose();
 				FileInfo fileInfo = new FileInfo(dialog.FileName);
 				SqlSaveDirectory = fileInfo.DirectoryName;
+				SettingsManager.SetString("SqlSaveDirectory", SqlSaveDirectory);
+				StatusText = string.Format("Saved {0}", dialog.FileName);
 			}
-			SettingsManager.SetString("SqlSaveDirectory", SqlSaveDirectory);
 		}
 		private void SaveAsMultipleFiles(object sender, RoutedEventArgs e) {
+			System.Windows.Forms.FolderBrowserDialog dialog = new System.Windows.Forms.FolderBrowserDialog();
+			if (!string.IsNullOrWhiteSpace(SqlSaveDirectory)) {
+				dialog.SelectedPath = SqlSaveDirectory;
+			}
+			else {
+				dialog.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+			}
+			dialog.ShowNewFolderButton = true;
+			if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+
+				SqlSaveDirectory = dialog.SelectedPath;
+				SettingsManager.SetString("SqlSaveDirectory", SqlSaveDirectory);
+
+				Parallel.ForEach(GeneratedSqlScript, (i) => {
+					string filePath = string.Format("{0}\\{1}.sql", SqlSaveDirectory, i.Key);
+					try {
+						lock(statusText) {
+							StatusText = string.Format("Saving {0}...", filePath);
+						}
+						File.WriteAllText(filePath, i.Value);
+					}
+					catch(Exception ex) {
+						MessageBox.Show(string.Format("Unable to save file {0}.\n{1}", filePath, ex.Message));
+					}
+				});
+				StatusText = string.Format("Saved {0} files to {1}", GeneratedSqlScript.Count, SqlSaveDirectory);
+			}
 		}
 
 		#region GenerateSqlScript(); GenerateSqlScript_Click();
@@ -225,21 +271,15 @@ namespace SalesforceSQLSchemaSync.WPF {
 				}
 			}
 
-			bool isFirst = true;
+			StatusText = string.Format("Getting details for {0} objects from Salesforce...", tableNames.Count);
 			List<DescribeSObjectResult> sObjects = salesforceAPI.GetSObjectDetails(tableNames);
+			StatusText = string.Format("Generating SQL script for {0} objects...", sObjects.Count);
 			string schema = null;
 			if (!string.IsNullOrWhiteSpace(SqlSchemaName)) {
 				schema = string.Format("[{0}].", SqlSchemaName);
 			}
 			foreach (DescribeSObjectResult t in sObjects) {
 				StringBuilder sb = new StringBuilder();
-
-				if (!isFirst) {
-					sb.AppendLine().AppendLine();
-				}
-				else {
-					isFirst = false;
-				}
 				sb.AppendLine(string.Format("CREATE TABLE {0}[{1}] (", schema, t.name));
 				List<string> primaryKeys = new List<string>();
 				bool firstRow = true;
@@ -316,6 +356,7 @@ namespace SalesforceSQLSchemaSync.WPF {
 
 				output.Add(t.name, sb.ToString());
 			}
+			StatusText = string.Format("Generated SQL script for {0} objects", sObjects.Count);
 
 			return output;
 		}
@@ -324,7 +365,14 @@ namespace SalesforceSQLSchemaSync.WPF {
 			StringBuilder sb = new StringBuilder();
 			GeneratedSqlScript.Clear();
 			GeneratedSqlScript = GenerateSqlScript();
+			bool isFirst = true;
 			foreach (string sql in GeneratedSqlScript.Values) {
+				if (!isFirst) {
+					sb.AppendLine().AppendLine();
+				}
+				else {
+					isFirst = false;
+				}
 				sb.AppendLine(sql);
 			}
 			SqlOutputDocument.Text = sb.ToString();

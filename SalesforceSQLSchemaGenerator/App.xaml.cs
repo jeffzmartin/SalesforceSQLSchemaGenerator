@@ -7,7 +7,7 @@ using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace SalesforceSQLSchemaSync.WPF {
+namespace SalesforceSQLSchemaGenerator {
 	/// <summary>
 	/// Interaction logic for App.xaml
 	/// </summary>
