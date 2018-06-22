@@ -360,6 +360,22 @@ namespace SalesforceSQLSchemaGenerator {
 							}
 							break;
 						case "address":
+							if (SqlVarcharMaxMinimumThreshold != null && f.length >= SqlVarcharMaxMinimumThreshold.Value) {
+								sb.Append(string.Format("[{0}] {1}(MAX)", f.name, stringDataType));
+							}
+							else if(f.length == 0) {
+								if(SqlVarcharMaxMinimumThreshold.Value > 2000) {
+									sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, "2000"));	//assume 2000 length based on some testing (data may come through as XML)
+								}
+								else {
+									sb.Append(string.Format("[{0}] {1}(MAX)", f.name, stringDataType));
+								}
+							}
+							else {
+								sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, f.length));
+							}
+							break;
+						case "combobox":
 						case "email":
 						case "location":
 						case "multipicklist":
@@ -432,7 +448,7 @@ namespace SalesforceSQLSchemaGenerator {
 			GeneratedSqlScript.Clear();
 			GeneratedSqlScript = GenerateSqlScript();
 			bool isFirst = true;
-			foreach (string sql in GeneratedSqlScript.Values) {
+			foreach (string sql in GeneratedSqlScript.Values.Reverse()) {
 				if (!isFirst) {
 					sb.AppendLine().AppendLine();
 				}
