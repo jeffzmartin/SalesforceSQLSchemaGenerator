@@ -7,7 +7,7 @@
 		xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
         mc:Ignorable="d"
 		xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
-        Title="Salesforce SQL Schema Generator" Height="768" Width="1024"
+        Title="Salesforce SQL Schema Generator" Height="768" Width="1274"
 		DataContext="{Binding RelativeSource={RelativeSource Self}}">
 	<DockPanel>
 		<StatusBar DockPanel.Dock="Bottom">
@@ -99,7 +99,14 @@
 					</Label>
 					<TextBox Grid.Row="2" Grid.Column="1" Margin="{Binding DefaultMargin}" Text="{Binding SqlVarcharMaxMinimumThreshold}" TextChanged="SaveSqlInfo" />
 					<CheckBox Grid.Row="3" Grid.Column="1" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlTextUnicode}" Content="Define text data as UNICODE (use NVARCHAR)" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
-					<CheckBox Grid.Row="4" Grid.Column="1" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeys}" Content="Generate foreign keys" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
+					<Grid Grid.Row="4" Grid.Column="1" Margin="0,0,0,0">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto"/>
+							<ColumnDefinition Width="*"/>
+						</Grid.ColumnDefinitions>
+						<CheckBox Grid.Row="0" Grid.Column="0" Padding="0,0,19,0" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeys}" Content="Generate foreign keys" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
+						<CheckBox Grid.Row="0" Grid.Column="1" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeysSelectedObjectsOnly}" Content="Foreign keys only for selected objects" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" IsEnabled="{Binding SqlGenerateForeignKeys}" />
+					</Grid>
 					<Button Grid.Row="5" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Left" Click="GenerateSqlScript_Click" Visibility="{Binding GenerateScriptVisibility}"/>
 					<Grid Grid.Row="6" Grid.Column="1" Visibility="{Binding SaveScriptVisibility}" Margin="0,19,0,0">
 						<Grid.ColumnDefinitions>

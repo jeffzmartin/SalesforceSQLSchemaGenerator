@@ -54,7 +54,17 @@ namespace SalesforceSQLSchemaGenerator {
 		public bool SqlTextUnicode { get; set; }
 		public int? SqlVarcharMaxMinimumThreshold { get; set; }
 		private string SqlSaveDirectory { get; set; }
-		public bool SqlGenerateForeignKeys { get; set; }
+		private bool sqlGenerateForeignKeys = true;
+		public bool SqlGenerateForeignKeys {
+			get {
+				return sqlGenerateForeignKeys;
+			}
+			set {
+				sqlGenerateForeignKeys = value;
+				OnPropertyChanged("SqlGenerateForeignKeys");
+			}
+		}
+		public bool SqlGenerateForeignKeysSelectedObjectsOnly { get; set; }
 
 		public ObservableCheckedListItemCollection SalesforceObjects { get; set; }
 
@@ -80,6 +90,18 @@ namespace SalesforceSQLSchemaGenerator {
 			}
 		}
 
+		private string[] AllowedNullableFieldNames = new string[] {
+			"Id",
+			"CreatedById",
+			"CreatedDate",
+			"LastModifiedById",
+			"LastModifiedDate",
+			"SystemModstamp",
+			"IsDeleted",
+			"Name",
+			"OwnerId"
+		};
+
 		public Thickness DefaultMargin { get; set; }
 		private Dictionary<string, string> GeneratedSqlScript = new Dictionary<string, string>();
 
@@ -103,7 +125,8 @@ namespace SalesforceSQLSchemaGenerator {
 				SalesforceToken = SettingsManager.GetSecureString("SalesforceToken");
 			}
 			SalesforceRememberSelectedObjects = SettingsManager.GetValue<bool>("SalesforceRememberSelectedObjects");
-			if(SalesforceRememberSelectedObjects && SettingsManager.GetValue<StringCollection>("SalesforceSelectedObjects") != null) {
+			SqlGenerateForeignKeysSelectedObjectsOnly = SettingsManager.GetValue<bool>("SqlGenerateForeignKeysSelectedObjectsOnly");
+			if (SalesforceRememberSelectedObjects && SettingsManager.GetValue<StringCollection>("SalesforceSelectedObjects") != null) {
 				SalesforceSelectedObjects = SettingsManager.GetValue<StringCollection>("SalesforceSelectedObjects");
 			}
 			SqlSchemaName = SettingsManager.GetString("SqlSchemaName");
@@ -131,7 +154,7 @@ namespace SalesforceSQLSchemaGenerator {
 		}
 		#endregion
 
-		#region INotifyPropertyChanged implementation
+		#region INotifyPropertyChanged - PropertyChanged; OnPropertyChanged(); 
 		// Basically, the UI thread subscribes to this event and update the binding if the received Property Name correspond to the Binding Path element
 		public event PropertyChangedEventHandler PropertyChanged;
 		protected virtual void OnPropertyChanged(string propertyName) {
@@ -250,6 +273,7 @@ namespace SalesforceSQLSchemaGenerator {
 				SettingsManager.SetValue("SqlTextUnicode", SqlTextUnicode);
 				SettingsManager.SetNullableValue("SqlVarcharMaxMinimumThreshold", SqlVarcharMaxMinimumThreshold);
 				SettingsManager.SetValue("SqlGenerateForeignKeys", SqlGenerateForeignKeys);
+				SettingsManager.SetValue("SqlGenerateForeignKeysSelectedObjectsOnly", SqlGenerateForeignKeysSelectedObjectsOnly);
 			}
 		}
 		#endregion
@@ -363,9 +387,9 @@ namespace SalesforceSQLSchemaGenerator {
 							if (SqlVarcharMaxMinimumThreshold != null && f.length >= SqlVarcharMaxMinimumThreshold.Value) {
 								sb.Append(string.Format("[{0}] {1}(MAX)", f.name, stringDataType));
 							}
-							else if(f.length == 0) {
-								if(SqlVarcharMaxMinimumThreshold.Value > 2000) {
-									sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, "2000"));	//assume 2000 length based on some testing (data may come through as XML)
+							else if (f.length == 0) {
+								if (SqlVarcharMaxMinimumThreshold.Value > 2000) {
+									sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, "2000")); //assume 2000 length based on some testing (data may come through as XML)
 								}
 								else {
 									sb.Append(string.Format("[{0}] {1}(MAX)", f.name, stringDataType));
@@ -416,23 +440,27 @@ namespace SalesforceSQLSchemaGenerator {
 							sb.Append(string.Format("[{0}] {1}", f.name, f.type));
 							break;
 					}
-					if ((f.referenceTo != null && f.referenceTo.Length ==1) || string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
+					if ((f.referenceTo != null && f.referenceTo.Length == 1) || string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
 						sb.Append(" COLLATE SQL_Latin1_General_CP1_CS_AS");
 						if (f.referenceTo != null && f.referenceTo.Length == 1) {
 							foreignKeys.Add(new ForeignKeyEntry(t.name, f.name, f.referenceTo[0], "Id")); //hardcode foreign key to id of ref table
 						}
 					}
-					if (!f.nillable) {
+					if (!f.nillable && AllowedNullableFieldNames.Contains(f.name, StringComparer.InvariantCultureIgnoreCase)) {
 						sb.Append(" NOT NULL");
 					}
 					sb.AppendLine();
 				}
-				if(primaryKeys.Count > 0) {
+				if (primaryKeys.Count > 0) {
 					sb.AppendLine(string.Format("	,CONSTRAINT [PK_{0}] PRIMARY KEY CLUSTERED ([{1}] ASC)", t.name, string.Join("], [", primaryKeys)));
 					//sb.AppendLine(string.Format("	,PRIMARY KEY ([{0}])", string.Join("], [", primaryKeys)));
 				}
-				foreach(ForeignKeyEntry fk in foreignKeys) {
-					sb.AppendLine(string.Format("	,CONSTRAINT [FK_{0}_{1}_{2}] FOREIGN KEY ([{1}]) REFERENCES {4}[{2}]([{3}])", fk.FromTable, fk.FromField, fk.ToTable, fk.ToField, schema));
+				if (SqlGenerateForeignKeys) {
+					foreach (ForeignKeyEntry fk in foreignKeys) {
+						if (!SqlGenerateForeignKeysSelectedObjectsOnly || tableNames.Contains(fk.ToTable, StringComparer.InvariantCultureIgnoreCase)) {
+							sb.AppendLine(string.Format("	,CONSTRAINT [FK_{0}_{1}_{2}] FOREIGN KEY ([{1}]) REFERENCES {4}[{2}]([{3}])", fk.FromTable, fk.FromField, fk.ToTable, fk.ToField, schema));
+						}
+					}
 				}
 				sb.Append(");");
 

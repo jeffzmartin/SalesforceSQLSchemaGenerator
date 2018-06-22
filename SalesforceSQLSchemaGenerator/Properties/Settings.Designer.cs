@@ -164,5 +164,17 @@ namespace SalesforceSQLSchemaGenerator.Properties {
                 this["SalesforceSelectedObjects"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SqlGenerateForeignKeysSelectedObjectsOnly {
+            get {
+                return ((bool)(this["SqlGenerateForeignKeysSelectedObjectsOnly"]));
+            }
+            set {
+                this["SqlGenerateForeignKeysSelectedObjectsOnly"] = value;
+            }
+        }
     }
 }
