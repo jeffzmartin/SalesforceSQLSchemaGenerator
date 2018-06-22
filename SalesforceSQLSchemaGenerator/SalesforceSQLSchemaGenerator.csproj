@@ -80,6 +80,7 @@
     </ApplicationDefinition>
     <Compile Include="CheckedListItem.cs" />
     <Compile Include="Encryption.cs" />
+    <Compile Include="ForeignKeyEntry.cs" />
     <Compile Include="SalesforceAPI.cs" />
     <Compile Include="Properties\Settings.cs" />
     <Compile Include="SettingsManager.cs" />

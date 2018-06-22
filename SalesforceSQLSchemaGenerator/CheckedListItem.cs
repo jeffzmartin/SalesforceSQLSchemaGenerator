@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -44,13 +45,39 @@ namespace SalesforceSQLSchemaGenerator {
 				OnPropertyChanged("IsChecked");
 			}
 		}
-		
+
+		public delegate void CheckedChangedEventHandler(string value, bool isChecked);
+		public event CheckedChangedEventHandler CheckedChanged;
+
 		#region INotifyPropertyChanged implementation
 		// Basically, the UI thread subscribes to this event and update the binding if the received Property Name correspond to the Binding Path element
 		public event PropertyChangedEventHandler PropertyChanged;
 		protected virtual void OnPropertyChanged(string propertyName) {
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+			CheckedChanged?.Invoke(value, isChecked);
 		}
 		#endregion
+	}
+
+	public class ObservableCheckedListCheckedChanged {
+		public string Value { get; set; }
+		public bool IsChecked { get; set; }
+	}
+
+	public class ObservableCheckedListItemCollection : ObservableCollection<CheckedListItem> {
+		public delegate void ItemCheckedChangedHandler(ObservableCheckedListCheckedChanged e);
+
+		public new void Add(CheckedListItem item) {
+			item.CheckedChanged += Item_CheckedChanged;
+			base.Add(item);
+		}
+
+		public event ItemCheckedChangedHandler ItemCheckedChanged;
+		private void Item_CheckedChanged(string value, bool isChecked) {
+			ItemCheckedChanged?.Invoke(new ObservableCheckedListCheckedChanged() {
+				Value = value,
+				IsChecked = isChecked
+			});
+		}
 	}
 }

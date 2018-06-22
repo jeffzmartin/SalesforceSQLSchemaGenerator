@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace SalesforceSQLSchemaGenerator {
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow : Window, INotifyPropertyChanged {
+		private bool loaded = false;
 
 		private string statusText = null;
 		public string StatusText { 
@@ -44,14 +46,17 @@ namespace SalesforceSQLSchemaGenerator {
 		public string SalesforceUsername { get; set; }
 		private string SalesforcePassword = null;
 		public string SalesforceToken { get; set; }
+		public bool SalesforceRememberSelectedObjects { get; set; }
+		private StringCollection SalesforceSelectedObjects { get; set; }
 		public bool SalesforceRememberConnection { get; set; }
 
 		public string SqlSchemaName { get; set; }
 		public bool SqlTextUnicode { get; set; }
 		public int? SqlVarcharMaxMinimumThreshold { get; set; }
 		private string SqlSaveDirectory { get; set; }
+		public bool SqlGenerateForeignKeys { get; set; }
 
-		public ObservableCollection<CheckedListItem> SalesforceObjects { get; set; }
+		public ObservableCheckedListItemCollection SalesforceObjects { get; set; }
 
 		public TextDocument SqlOutputDocument { get; set; }
 		private Visibility generateScriptVisibility = Visibility.Hidden;
@@ -80,12 +85,14 @@ namespace SalesforceSQLSchemaGenerator {
 
 		private SalesforceApi salesforceAPI = null;
 
+		#region Constructor
 		public MainWindow() {
 			//set defaults
 			StatusText = "Initializing...";
 			SaveScriptVisibility = Visibility.Hidden;
 			GenerateScriptVisibility = Visibility.Hidden;
 			DefaultMargin = new Thickness(2, 2, 2, 2);
+			SalesforceSelectedObjects = new StringCollection();
 
 			//retrieve values from settings
 			SalesforceRememberConnection = SettingsManager.GetValue<bool>("SalesforceRememberConnection");
@@ -95,14 +102,20 @@ namespace SalesforceSQLSchemaGenerator {
 				SalesforcePassword = SettingsManager.GetSecureString("SalesforcePassword");
 				SalesforceToken = SettingsManager.GetSecureString("SalesforceToken");
 			}
+			SalesforceRememberSelectedObjects = SettingsManager.GetValue<bool>("SalesforceRememberSelectedObjects");
+			if(SalesforceRememberSelectedObjects && SettingsManager.GetValue<StringCollection>("SalesforceSelectedObjects") != null) {
+				SalesforceSelectedObjects = SettingsManager.GetValue<StringCollection>("SalesforceSelectedObjects");
+			}
 			SqlSchemaName = SettingsManager.GetString("SqlSchemaName");
 			SqlTextUnicode = SettingsManager.GetValue<bool>("SqlTextUnicode");
 			SqlVarcharMaxMinimumThreshold = SettingsManager.GetNullableValue<int>("SqlVarcharMaxMinimumThreshold"); /* SqlVarcharMaxMinimumThreshold = 4000; //4000 is the default min for N/VARCHAR(MAX) */
 			SqlSaveDirectory = SettingsManager.GetString("SqlSaveDirectory");
+			SqlGenerateForeignKeys = SettingsManager.GetValue<bool>("SqlGenerateForeignKeys");
 
 			DataContext = this;
 
-			SalesforceObjects = new ObservableCollection<CheckedListItem>();
+			SalesforceObjects = new ObservableCheckedListItemCollection();
+			SalesforceObjects.ItemCheckedChanged += SalesforceObjects_ItemCheckedChanged;
 			SqlOutputDocument = new TextDocument();
 
 			LoadSqlSyntaxHighlightRules();
@@ -113,7 +126,10 @@ namespace SalesforceSQLSchemaGenerator {
 				SalesforcePasswordBox.Password = SalesforcePassword;
 			}
 			StatusText = "Ready";
+
+			loaded = true;
 		}
+		#endregion
 
 		#region INotifyPropertyChanged implementation
 		// Basically, the UI thread subscribes to this event and update the binding if the received Property Name correspond to the Binding Path element
@@ -123,6 +139,7 @@ namespace SalesforceSQLSchemaGenerator {
 		}
 		#endregion
 
+		#region LoadSqlSyntaxHighlightRules();
 		private void LoadSqlSyntaxHighlightRules() {
 			Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SalesforceSQLSchemaGenerator.AvalonEdit.SQLSyntax.xhsd");
 			XmlTextReader reader = new XmlTextReader(stream);
@@ -133,12 +150,71 @@ namespace SalesforceSQLSchemaGenerator {
 			stream.Close();
 			stream.Dispose();
 		}
+		#endregion
 
+		#region SalesforceObjects_ItemCheckedChanged(); SalesforcePassword_PasswordChanged();
+		private void SalesforceObjects_ItemCheckedChanged(ObservableCheckedListCheckedChanged e) {
+			if(e.IsChecked && !SalesforceSelectedObjects.Contains(e.Value)) {
+				SalesforceSelectedObjects.Add(e.Value);
+			}
+			else if(!e.IsChecked) {
+				SalesforceSelectedObjects.Remove(e.Value);
+			}
+			SaveCheckedSalesforceObjectsInfo();
+		}
+
+		private void SalesforcePassword_PasswordChanged(object sender, RoutedEventArgs e) {
+			SalesforcePassword = ((PasswordBox)sender).Password;
+			SaveSalesforceConnctionInfo();
+		}
+		#endregion
+
+		#region SalesforceConnect_Click(); SelectAllObjects_Click(); UnselectAllObjects_Click();
+		private void SalesforceConnect_Click(object sender, RoutedEventArgs e) {
+			SaveSalesforceConnctionInfo();
+
+			try {
+				StatusText = string.Format("Connecting to {0}...", SalesforceUrl);
+				salesforceAPI = new SalesforceApi(SalesforceUrl, SalesforceUsername, SalesforcePassword, SalesforceToken);
+				StatusText = string.Format("Retrieving object listing...", SalesforceUrl);
+				List<string> sfObjects = salesforceAPI.GetObjectNames();
+				sfObjects.Sort(StringComparer.InvariantCultureIgnoreCase);
+				SalesforceObjects.Clear();
+				foreach (string sObjectName in sfObjects) {
+					SalesforceObjects.Add(new CheckedListItem(sObjectName) {
+						IsChecked = SalesforceSelectedObjects.Contains(sObjectName)
+					});
+				}
+				if (SalesforceObjects.Count > 0) {
+					GenerateScriptVisibility = Visibility.Visible;
+				}
+				StatusText = string.Format("Discovered {0} objects", SalesforceObjects.Count);
+			}
+			catch (Exception ex) {
+				MessageBox.Show(ex.Message);
+			}
+		}
+
+		public void SelectAllObjects_Click(object sender, RoutedEventArgs e) {
+			foreach(CheckedListItem i in SalesforceObjects) {
+				i.IsChecked = true;
+			}
+			SaveCheckedSalesforceObjectsInfo();
+		}
+		public void UnselectAllObjects_Click(object sender, RoutedEventArgs e) {
+			foreach (CheckedListItem i in SalesforceObjects) {
+				i.IsChecked = false;
+			}
+			SaveCheckedSalesforceObjectsInfo();
+		}
+		#endregion
+
+		#region SaveSalesforceConnctionInfo(); SaveCheckedSalesforceObjectsInfo(); SaveSqlInfo();
 		private void SaveSalesforceConnctionInfo(object sender, RoutedEventArgs e) {
 			SaveSalesforceConnctionInfo();
 		}
 		private void SaveSalesforceConnctionInfo() {
-			if(IsInitialized) {
+			if (loaded) {
 				SettingsManager.SetValue("SalesforceRememberConnection", SalesforceRememberConnection);
 				if (SalesforceRememberConnection) {
 					SettingsManager.SetValue("SalesforceUrl", SalesforceUrl);
@@ -155,41 +231,13 @@ namespace SalesforceSQLSchemaGenerator {
 			}
 		}
 
-		private void SalesforcePassword_PasswordChanged(object sender, RoutedEventArgs e) {
-			SalesforcePassword = ((PasswordBox)sender).Password;
-			SaveSalesforceConnctionInfo();
-		}
-
-		private void SalesforceConnect_Click(object sender, RoutedEventArgs e) {
-			SaveSalesforceConnctionInfo();
-
-			try {
-				StatusText = string.Format("Connecting to {0}...", SalesforceUrl);
-				salesforceAPI = new SalesforceApi(SalesforceUrl, SalesforceUsername, SalesforcePassword, SalesforceToken);
-				StatusText = string.Format("Retrieving object listing...", SalesforceUrl);
-				List<string> sfObjects = salesforceAPI.GetObjectNames();
-				SalesforceObjects.Clear();
-				foreach (string sObjectName in sfObjects) {
-					SalesforceObjects.Add(new CheckedListItem(sObjectName));
-				}
-				if (SalesforceObjects.Count > 0) {
-					GenerateScriptVisibility = Visibility.Visible;
-				}
-				StatusText = string.Format("Discovered {0} objects", SalesforceObjects.Count);
+		private void SaveCheckedSalesforceObjectsInfo() {
+			SettingsManager.SetValue("SalesforceRememberSelectedObjects", SalesforceRememberSelectedObjects);
+			if (SalesforceRememberSelectedObjects) {
+				SettingsManager.SetValue("SalesforceSelectedObjects", SalesforceSelectedObjects);
 			}
-			catch (Exception ex) {
-				MessageBox.Show(ex.Message);
-			}
-		}
-
-		public void SelectAllObjects_Click(object sender, RoutedEventArgs e) {
-			foreach(CheckedListItem i in SalesforceObjects) {
-				i.IsChecked = true;
-			}
-		}
-		public void UnselectAllObjects_Click(object sender, RoutedEventArgs e) {
-			foreach (CheckedListItem i in SalesforceObjects) {
-				i.IsChecked = false;
+			else {
+				SettingsManager.SetValue<StringCollection>("SalesforceSelectedObjects", null);
 			}
 		}
 
@@ -197,13 +245,16 @@ namespace SalesforceSQLSchemaGenerator {
 			SaveSqlInfo();
 		}
 		private void SaveSqlInfo() {
-			if (IsInitialized) {
+			if (loaded) {
 				SettingsManager.SetString("SqlSchemaName", SqlSchemaName);
 				SettingsManager.SetValue("SqlTextUnicode", SqlTextUnicode);
 				SettingsManager.SetNullableValue("SqlVarcharMaxMinimumThreshold", SqlVarcharMaxMinimumThreshold);
+				SettingsManager.SetValue("SqlGenerateForeignKeys", SqlGenerateForeignKeys);
 			}
 		}
+		#endregion
 
+		#region SaveAsSingleFile(); SaveAsMultipleFiles();
 		private void SaveAsSingleFile(object sender, RoutedEventArgs e) {
 			System.Windows.Forms.SaveFileDialog dialog = new System.Windows.Forms.SaveFileDialog {
 				OverwritePrompt = true
@@ -259,6 +310,7 @@ namespace SalesforceSQLSchemaGenerator {
 				StatusText = string.Format("Saved {0} files to {1}", GeneratedSqlScript.Count, SqlSaveDirectory);
 			}
 		}
+		#endregion
 
 		#region GenerateSqlScript(); GenerateSqlScript_Click();
 		public Dictionary<string,string> GenerateSqlScript() {
@@ -272,8 +324,9 @@ namespace SalesforceSQLSchemaGenerator {
 			}
 
 			StatusText = string.Format("Getting details for {0} objects from Salesforce...", tableNames.Count);
-			List<DescribeSObjectResult> sObjects = salesforceAPI.GetSObjectDetails(tableNames);
-			StatusText = string.Format("Generating SQL script for {0} objects...", sObjects.Count);
+			IEnumerable<DescribeSObjectResult> sObjects = salesforceAPI.GetSObjectDetails(tableNames);
+			StatusText = string.Format("Generating SQL script for {0} objects...", sObjects.Count());
+			string stringDataType = (SqlTextUnicode ? "NVARCHAR" : "VARCHAR"); 
 			string schema = null;
 			if (!string.IsNullOrWhiteSpace(SqlSchemaName)) {
 				schema = string.Format("[{0}].", SqlSchemaName);
@@ -282,6 +335,7 @@ namespace SalesforceSQLSchemaGenerator {
 				StringBuilder sb = new StringBuilder();
 				sb.AppendLine(string.Format("CREATE TABLE {0}[{1}] (", schema, t.name));
 				List<string> primaryKeys = new List<string>();
+				List<ForeignKeyEntry> foreignKeys = new List<ForeignKeyEntry>();
 				bool firstRow = true;
 				foreach (Field f in t.fields) {
 					sb.Append("	"); //indent
@@ -289,8 +343,8 @@ namespace SalesforceSQLSchemaGenerator {
 						sb.Append(",");
 					}
 					firstRow = false;
-					/*
-					 *  https://learn.capstorm.com/copystorm/frequently-asked-questions/how-does-copystorm-work/how-do-salesforce-types-map-to-database-column-types/
+					/*  
+					 *  Useful starting point: https://learn.capstorm.com/copystorm/frequently-asked-questions/how-does-copystorm-work/how-do-salesforce-types-map-to-database-column-types/
 					 */
 					switch (f.type.ToString()) {
 						case "currency":
@@ -299,9 +353,14 @@ namespace SalesforceSQLSchemaGenerator {
 						case "percent":
 							sb.Append(string.Format("[{0}] DECIMAL({1},{2})", f.name, f.precision, f.scale));
 							break;
+						case "id":
+							sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, f.length));
+							if (string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
+								primaryKeys.Add(f.name);
+							}
+							break;
 						case "address":
 						case "email":
-						case "id":
 						case "location":
 						case "multipicklist":
 						case "phone":
@@ -310,14 +369,14 @@ namespace SalesforceSQLSchemaGenerator {
 						case "url":
 						case "textarea":
 							if (SqlVarcharMaxMinimumThreshold != null && f.length >= SqlVarcharMaxMinimumThreshold.Value) {
-								sb.Append(string.Format("[{0}] {1}(MAX)", f.name, (SqlTextUnicode ? "NVARCHAR" : "VARCHAR")));
+								sb.Append(string.Format("[{0}] {1}(MAX)", f.name, stringDataType));
 							}
 							else {
-								sb.Append(string.Format("[{0}] {1}({2})", f.name, (SqlTextUnicode ? "NVARCHAR" : "VARCHAR"), f.length));
+								sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, f.length));
 							}
 							break;
 						case "reference":
-							sb.Append(string.Format("[{0}] {1}({2})", f.name, (SqlTextUnicode ? "NCHAR" : "CHAR"), f.length));
+							sb.Append(string.Format("[{0}] {1}({2})", f.name, stringDataType, f.length));
 							break;
 						case "anyType":
 							sb.Append(string.Format("[{0}] TEXT", f.name));
@@ -341,22 +400,29 @@ namespace SalesforceSQLSchemaGenerator {
 							sb.Append(string.Format("[{0}] {1}", f.name, f.type));
 							break;
 					}
-					if(!f.nillable) {
+					if ((f.referenceTo != null && f.referenceTo.Length ==1) || string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
+						sb.Append(" COLLATE SQL_Latin1_General_CP1_CS_AS");
+						if (f.referenceTo != null && f.referenceTo.Length == 1) {
+							foreignKeys.Add(new ForeignKeyEntry(t.name, f.name, f.referenceTo[0], "Id")); //hardcode foreign key to id of ref table
+						}
+					}
+					if (!f.nillable) {
 						sb.Append(" NOT NULL");
 					}
 					sb.AppendLine();
-					if(string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
-						primaryKeys.Add(f.name);
-					}
 				}
 				if(primaryKeys.Count > 0) {
-					sb.AppendLine(string.Format("	,PRIMARY KEY ([{0}])", string.Join("], [", primaryKeys)));
+					sb.AppendLine(string.Format("	,CONSTRAINT [PK_{0}] PRIMARY KEY CLUSTERED ([{1}] ASC)", t.name, string.Join("], [", primaryKeys)));
+					//sb.AppendLine(string.Format("	,PRIMARY KEY ([{0}])", string.Join("], [", primaryKeys)));
+				}
+				foreach(ForeignKeyEntry fk in foreignKeys) {
+					sb.AppendLine(string.Format("	,CONSTRAINT [FK_{0}_{1}_{2}] FOREIGN KEY ([{1}]) REFERENCES {4}[{2}]([{3}])", fk.FromTable, fk.FromField, fk.ToTable, fk.ToField, schema));
 				}
 				sb.Append(");");
 
 				output.Add(t.name, sb.ToString());
 			}
-			StatusText = string.Format("Generated SQL script for {0} objects", sObjects.Count);
+			StatusText = string.Format("Generated SQL script for {0} objects", sObjects.Count());
 
 			return output;
 		}

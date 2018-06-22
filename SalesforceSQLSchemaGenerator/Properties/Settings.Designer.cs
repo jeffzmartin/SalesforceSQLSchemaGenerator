@@ -129,5 +129,40 @@ namespace SalesforceSQLSchemaGenerator.Properties {
                 this["SqlSaveDirectory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SqlGenerateForeignKeys {
+            get {
+                return ((bool)(this["SqlGenerateForeignKeys"]));
+            }
+            set {
+                this["SqlGenerateForeignKeys"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SalesforceRememberSelectedObjects {
+            get {
+                return ((bool)(this["SalesforceRememberSelectedObjects"]));
+            }
+            set {
+                this["SalesforceRememberSelectedObjects"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection SalesforceSelectedObjects {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["SalesforceSelectedObjects"]));
+            }
+            set {
+                this["SalesforceSelectedObjects"] = value;
+            }
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace SalesforceSQLSchemaGenerator {
 		private readonly SforceService salesforceSoapService;
 		private readonly LoginResult loginResult;
 		private readonly string url;
-		private readonly string soapUrlVersion = "18.0";
+		private readonly string soapUrlVersion = "43.0";
 
 		public SalesforceApi(string url, string username, string password, string token) {
 			if(url.EndsWith("/")) {
@@ -134,6 +134,7 @@ namespace SalesforceSQLSchemaGenerator {
 			return salesforceSoapService
 				.update(new sObject[] { element });
 		}
+		#endregion
 
 		public List<string> GetTableNameList() {
 			List<string> sobjectsNames = new List<string>();
@@ -146,16 +147,15 @@ namespace SalesforceSQLSchemaGenerator {
 			return sobjectsNames;
 		}
 
-		public List<DescribeSObjectResult> GetSObjectDetails(List<string> tableNames) {
+		public IEnumerable<DescribeSObjectResult> GetSObjectDetails(List<string> tableNames) {
 			ConcurrentBag<DescribeSObjectResult> results = new ConcurrentBag<DescribeSObjectResult>();
 			Parallel.ForEach(splitList(tableNames, 100), (tableSet) => {
 				foreach (DescribeSObjectResult o in salesforceSoapService.describeSObjects(tableSet.ToArray())) {
 					results.Add(o);
 				}
 			});
-			return results.ToList();
+			return results;
 		}
-		#endregion
 
 		/*
 		 * From: https://stackoverflow.com/questions/11463734/split-a-list-into-smaller-lists-of-n-size
