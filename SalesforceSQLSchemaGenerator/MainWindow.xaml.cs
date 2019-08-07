@@ -110,7 +110,7 @@ namespace SalesforceSQLSchemaGenerator {
 			}
 		}
 
-		private string[] AllowedNullableFieldNames = new string[] {
+		private string[] AllowedNonNullableFieldNames = new string[] {
 			"Id",
 			"CreatedById",
 			"CreatedDate",
@@ -121,7 +121,10 @@ namespace SalesforceSQLSchemaGenerator {
 			"Name",
 			"OwnerId"
 		};
-
+		private string[] DisallowedUserForeignKeys = new string[] {
+			"CreatedById",
+			"LastModifiedById",
+		};
 		public Thickness DefaultMargin { get; set; }
 		private Dictionary<string, string> GeneratedSqlScript = new Dictionary<string, string>();
 
@@ -471,11 +474,11 @@ namespace SalesforceSQLSchemaGenerator {
 					}
 					if ((f.referenceTo != null && f.referenceTo.Length == 1) || string.Equals(f.name, "id", StringComparison.InvariantCultureIgnoreCase)) {
 						sb.Append(" COLLATE SQL_Latin1_General_CP1_CS_AS");
-						if (f.referenceTo != null && f.referenceTo.Length == 1) {
+						if (f.referenceTo != null && f.referenceTo.Length == 1 && !(t.name.Equals("User", StringComparison.InvariantCultureIgnoreCase) && DisallowedUserForeignKeys.Contains(f.name, StringComparer.InvariantCultureIgnoreCase))) {
 							foreignKeys.Add(new ForeignKeyEntry(t.name, f.name, f.referenceTo[0], "Id")); //hardcode foreign key to id of ref table
 						}
 					}
-					if (!f.nillable && AllowedNullableFieldNames.Contains(f.name, StringComparer.InvariantCultureIgnoreCase)) {
+					if (!f.nillable && AllowedNonNullableFieldNames.Contains(f.name, StringComparer.InvariantCultureIgnoreCase)) {
 						sb.Append(" NOT NULL");
 					}
 					sb.AppendLine();

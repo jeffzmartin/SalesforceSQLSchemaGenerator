@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jeff Z Martin")]
 [assembly: AssemblyProduct("SalesforceSQLSchemaGenerator")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2018")]
+[assembly: AssemblyCopyright("Copyright © Microsoft 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,5 +51,5 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2018.1.1.0")]
-[assembly: AssemblyFileVersion("2018.1.1.0")]
+[assembly: AssemblyVersion("2019.1.1.0")]
+[assembly: AssemblyFileVersion("2019.1.1.0")]

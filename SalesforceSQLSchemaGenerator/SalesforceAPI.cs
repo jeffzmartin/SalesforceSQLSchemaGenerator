@@ -15,7 +15,7 @@ namespace SalesforceSQLSchemaGenerator {
 		private readonly SforceService salesforceSoapService;
 		private readonly LoginResult loginResult;
 		private readonly string url;
-		private readonly string soapUrlVersion = "43.0";
+		private readonly string soapUrlVersion = "46.0";
 
 		public SalesforceApi(string url, string username, string password, string token) {
 			if(url.EndsWith("/")) {
@@ -27,19 +27,13 @@ namespace SalesforceSQLSchemaGenerator {
 			salesforceSoapService = new SforceService();
 			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-			loginResult = Login(username, password + token);
+			salesforceSoapService.Url = string.Format("{0}/services/Soap/u/{1}", url, soapUrlVersion);
 
-			Init(url, loginResult.sessionId);
+			loginResult = Login(username, password + token);
 		}
 
 		public List<string> GetObjectNames() {
 			return GetTableNameList();
-		}
-
-		#region Taken from SFDC.SalesforceApi https://github.com/marcincymbalista/SFDC/
-		private void Init(string endPointUrl, string sessionId) {
-			salesforceSoapService.Url = string.Format("{0}/services/Soap/u/{1}", endPointUrl, soapUrlVersion);
-			salesforceSoapService.SessionHeaderValue = new SessionHeader { sessionId = sessionId };
 		}
 
 		public GetUserInfoResult GetUserInfo() {
@@ -47,7 +41,10 @@ namespace SalesforceSQLSchemaGenerator {
 		}
 
 		private LoginResult Login(string userName, string password) {
-			return salesforceSoapService.login(userName, password);
+			LoginResult result = salesforceSoapService.login(userName, password);
+			salesforceSoapService.Url = result.serverUrl;
+			salesforceSoapService.SessionHeaderValue = new SessionHeader { sessionId = result.sessionId };
+			return result;
 		}
 
 		///<summary>
@@ -134,7 +131,6 @@ namespace SalesforceSQLSchemaGenerator {
 			return salesforceSoapService
 				.update(new sObject[] { element });
 		}
-		#endregion
 
 		public List<string> GetTableNameList() {
 			List<string> sobjectsNames = new List<string>();
