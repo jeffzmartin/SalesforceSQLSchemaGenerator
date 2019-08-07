@@ -41,6 +41,26 @@ namespace SalesforceSQLSchemaGenerator {
 				OnPropertyChanged("StatusText");
 			}
 		}
+		private string statusTextLeft = null;
+		public string StatusTextLeft {
+			get {
+				return statusTextLeft;
+			}
+			set {
+				statusTextLeft = value;
+				OnPropertyChanged("StatusTextLeft");
+			}
+		}
+		private string filterText = null;
+		public string FilterText {
+			get {
+				return filterText;
+			}
+			set {
+				filterText = value;
+				OnPropertyChanged("FilterText");
+			}
+		}
 
 		public string SalesforceUrl { get; set; }
 		public string SalesforceUsername { get; set; }
@@ -139,6 +159,7 @@ namespace SalesforceSQLSchemaGenerator {
 
 			SalesforceObjects = new ObservableCheckedListItemCollection();
 			SalesforceObjects.ItemCheckedChanged += SalesforceObjects_ItemCheckedChanged;
+			SalesforceObjects.CollectionChanged += SalesforceObjects_CollectionChanged;
 			SqlOutputDocument = new TextDocument();
 
 			LoadSqlSyntaxHighlightRules();
@@ -152,6 +173,7 @@ namespace SalesforceSQLSchemaGenerator {
 
 			loaded = true;
 		}
+
 		#endregion
 
 		#region INotifyPropertyChanged - PropertyChanged; OnPropertyChanged(); 
@@ -175,7 +197,11 @@ namespace SalesforceSQLSchemaGenerator {
 		}
 		#endregion
 
-		#region SalesforceObjects_ItemCheckedChanged(); SalesforcePassword_PasswordChanged();
+		#region SalesforceObjects_CollectionChanged(); SalesforceObjects_ItemCheckedChanged(); SalesforcePassword_PasswordChanged();
+		private void SalesforceObjects_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
+			StatusTextLeft = string.Format("{0} of {1} objects selected", SalesforceSelectedObjects.Count, SalesforceObjects.Count);
+		}
+
 		private void SalesforceObjects_ItemCheckedChanged(ObservableCheckedListCheckedChanged e) {
 			if(e.IsChecked && !SalesforceSelectedObjects.Contains(e.Value)) {
 				SalesforceSelectedObjects.Add(e.Value);
@@ -184,17 +210,18 @@ namespace SalesforceSQLSchemaGenerator {
 				SalesforceSelectedObjects.Remove(e.Value);
 			}
 			SaveCheckedSalesforceObjectsInfo();
+			SalesforceObjects_CollectionChanged(null, null);
 		}
 
 		private void SalesforcePassword_PasswordChanged(object sender, RoutedEventArgs e) {
 			SalesforcePassword = ((PasswordBox)sender).Password;
-			SaveSalesforceConnctionInfo();
+			SaveSalesforceConnectionInfo();
 		}
 		#endregion
 
 		#region SalesforceConnect_Click(); SelectAllObjects_Click(); UnselectAllObjects_Click();
 		private void SalesforceConnect_Click(object sender, RoutedEventArgs e) {
-			SaveSalesforceConnctionInfo();
+			SaveSalesforceConnectionInfo();
 
 			try {
 				StatusText = string.Format("Connecting to {0}...", SalesforceUrl);
@@ -208,9 +235,11 @@ namespace SalesforceSQLSchemaGenerator {
 						IsChecked = SalesforceSelectedObjects.Contains(sObjectName)
 					});
 				}
+				FilterSalesforceObjects(null);
 				if (SalesforceObjects.Count > 0) {
 					GenerateScriptVisibility = Visibility.Visible;
 				}
+				SalesforceObjects_CollectionChanged(null, null);
 				StatusText = string.Format("Discovered {0} objects", SalesforceObjects.Count);
 			}
 			catch (Exception ex) {
@@ -232,11 +261,11 @@ namespace SalesforceSQLSchemaGenerator {
 		}
 		#endregion
 
-		#region SaveSalesforceConnctionInfo(); SaveCheckedSalesforceObjectsInfo(); SaveSqlInfo();
-		private void SaveSalesforceConnctionInfo(object sender, RoutedEventArgs e) {
-			SaveSalesforceConnctionInfo();
+		#region SaveSalesforceConnectionInfo(); SaveCheckedSalesforceObjectsInfo(); SaveSqlInfo();
+		private void SaveSalesforceConnectionInfo(object sender, RoutedEventArgs e) {
+			SaveSalesforceConnectionInfo();
 		}
-		private void SaveSalesforceConnctionInfo() {
+		private void SaveSalesforceConnectionInfo() {
 			if (loaded) {
 				SettingsManager.SetValue("SalesforceRememberConnection", SalesforceRememberConnection);
 				if (SalesforceRememberConnection) {
@@ -489,5 +518,18 @@ namespace SalesforceSQLSchemaGenerator {
 			SaveScriptVisibility = Visibility.Visible;
 		}
 		#endregion
+
+		#region FilterSalesforceObjects();
+		private void FilterSalesforceObjects(string filter) {
+			foreach (CheckedListItem i in SalesforceObjects) {
+				i.IsVisible = string.IsNullOrWhiteSpace(filter) || i.Label.IndexOf(filter, StringComparison.InvariantCultureIgnoreCase) != -1;
+			}
+			OnPropertyChanged("SalesforceObjects");
+		}
+		#endregion
+
+		private void FilterTextbox_TextChanged(object sender, TextChangedEventArgs e) {
+			FilterSalesforceObjects(((TextBox)e.Source).Text);
+		}
 	}
 }

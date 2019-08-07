@@ -46,6 +46,17 @@ namespace SalesforceSQLSchemaGenerator {
 			}
 		}
 
+		private bool isVisible = true;
+		public bool IsVisible {
+			get {
+				return isVisible;
+			}
+			set {
+				this.isVisible = value;
+				OnPropertyChanged("IsVisible");
+			}
+		}
+
 		public delegate void CheckedChangedEventHandler(string value, bool isChecked);
 		public event CheckedChangedEventHandler CheckedChanged;
 
@@ -66,9 +77,12 @@ namespace SalesforceSQLSchemaGenerator {
 
 	public class ObservableCheckedListItemCollection : ObservableCollection<CheckedListItem> {
 		public delegate void ItemCheckedChangedHandler(ObservableCheckedListCheckedChanged e);
+		public bool NotifyCheckedChanged = true;
 
 		public new void Add(CheckedListItem item) {
-			item.CheckedChanged += Item_CheckedChanged;
+			if(NotifyCheckedChanged) {
+				item.CheckedChanged += Item_CheckedChanged;
+			}
 			base.Add(item);
 		}
 

@@ -11,8 +11,11 @@
 		DataContext="{Binding RelativeSource={RelativeSource Self}}">
 	<DockPanel>
 		<StatusBar DockPanel.Dock="Bottom">
-			<StatusBarItem>
-				<TextBlock Text="{Binding StatusText}" />
+			<StatusBarItem Width="Auto">
+				<TextBlock Text="{Binding StatusTextLeft}" TextAlignment="Left" />
+			</StatusBarItem>
+			<StatusBarItem Width="Auto" HorizontalAlignment="Right">
+				<TextBlock Text="{Binding StatusText}" TextAlignment="Right" />
 			</StatusBarItem>
 		</StatusBar>
 		<Grid Background="WhiteSmoke">
@@ -42,15 +45,15 @@
 						<RowDefinition Height="Auto" />
 					</Grid.RowDefinitions>
 					<Label Grid.Row="0" Grid.Column="0" Margin="{Binding DefaultMargin}">URL:</Label>
-					<TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding Path=SalesforceUrl, Mode=TwoWay}" />
+					<TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnectionInfo" Text="{Binding SalesforceUrl, Mode=TwoWay}" />
 					<Label Grid.Row="1" Grid.Column="0" Margin="{Binding DefaultMargin}">Username:</Label>
-					<TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceUsername, Mode=TwoWay}" />
+					<TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnectionInfo" Text="{Binding SalesforceUsername, Mode=TwoWay}" />
 					<Label Grid.Row="2" Grid.Column="0" Margin="{Binding DefaultMargin}">Password:</Label>
 					<PasswordBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" PasswordChanged="SalesforcePassword_PasswordChanged" Name="SalesforcePasswordBox" />
 					<Label Grid.Row="3" Grid.Column="0" Margin="{Binding DefaultMargin}">Token:</Label>
-					<TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnctionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
-					<CheckBox Grid.Row="6" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" Padding="0,0,36,0" />
-					<CheckBox Grid.Row="6" Grid.Column="2" Margin="{Binding DefaultMargin}" Content="Remember selected objects" IsChecked="{Binding SalesforceRememberSelectedObjects, Mode=TwoWay}" Unchecked="SaveSalesforceConnctionInfo" Checked="SaveSalesforceConnctionInfo" />
+					<TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="{Binding DefaultMargin}" TextChanged="SaveSalesforceConnectionInfo" Text="{Binding SalesforceToken, Mode=TwoWay}" />
+					<CheckBox Grid.Row="6" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Remember connection information" IsChecked="{Binding SalesforceRememberConnection, Mode=TwoWay}" Unchecked="SaveSalesforceConnectionInfo" Checked="SaveSalesforceConnectionInfo" Padding="4,0,36,0" />
+					<CheckBox Grid.Row="6" Grid.Column="2" Margin="{Binding DefaultMargin}" Content="Remember selected objects" IsChecked="{Binding SalesforceRememberSelectedObjects, Mode=TwoWay}" Unchecked="SaveSalesforceConnectionInfo" Checked="SaveSalesforceConnectionInfo" />
 					<Grid Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="*"/>
@@ -104,7 +107,7 @@
 							<ColumnDefinition Width="Auto"/>
 							<ColumnDefinition Width="*"/>
 						</Grid.ColumnDefinitions>
-						<CheckBox Grid.Row="0" Grid.Column="0" Padding="0,0,19,0" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeys}" Content="Generate foreign keys" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
+						<CheckBox Grid.Row="0" Grid.Column="0" Padding="4,0,19,0" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeys}" Content="Generate foreign keys" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" />
 						<CheckBox Grid.Row="0" Grid.Column="1" Margin="{Binding DefaultMargin}" IsChecked="{Binding SqlGenerateForeignKeysSelectedObjectsOnly}" Content="Foreign keys only for selected objects" Unchecked="SaveSqlInfo" Checked="SaveSqlInfo" IsEnabled="{Binding SqlGenerateForeignKeys}" />
 					</Grid>
 					<Button Grid.Row="5" Grid.Column="1" Margin="{Binding DefaultMargin}" Content="Generate Script for Selected Objects" Width="250" HorizontalAlignment="Left" Click="GenerateSqlScript_Click" Visibility="{Binding GenerateScriptVisibility}"/>
@@ -123,9 +126,21 @@
 					<ColumnDefinition Width="*" />
 				</Grid.ColumnDefinitions>
 				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
 					<RowDefinition Height="*" />
 				</Grid.RowDefinitions>
-				<ListBox Grid.Row="0" Grid.Column="0" Height="Auto" Width="Auto" SelectionMode="Multiple" ItemsSource="{Binding SalesforceObjects}" Background="White" Visibility="{Binding GenerateScriptVisibility}">
+				<Grid Grid.Row="0" Grid.Column="1" Visibility="{Binding GenerateScriptVisibility}">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto" />
+						<ColumnDefinition Width="*" />
+					</Grid.ColumnDefinitions>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<Label Grid.Row="0" Grid.Column="0" Content="Filter:"/>
+					<TextBox Grid.Row="0" Grid.Column="1" Margin="{Binding DefaultMargin}" Text="{Binding FilterText, Mode=TwoWay}" TextChanged="FilterTextbox_TextChanged" />
+				</Grid>
+				<ListBox Grid.Row="1" Grid.Column="0" Height="Auto" Width="Auto" SelectionMode="Multiple" ItemsSource="{Binding SalesforceObjects}" Background="White" Visibility="{Binding GenerateScriptVisibility}">
 					<ListBox.ItemTemplate>
 						<DataTemplate>
 							<CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}"/>
